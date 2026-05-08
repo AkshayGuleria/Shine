@@ -60,8 +60,8 @@ Shine installs a `CGEventTap` at `kCGHIDEventTap` level, which intercepts hardwa
 | 4 | Overlay window + countdown UI | ✅ Done |
 | 5 | Abort gesture (Esc-hold) | ✅ Done |
 | 6 | Permission UX (first-run flow, auto-detect grant) | ✅ Done |
-| 7 | Polish (sound, launch at login, icon) | 🔲 Next |
-| 8 | Sign + notarize | 🔲 Pending |
+| 7 | Polish (sound, launch at login, About window) | ✅ Done |
+| 8 | Sign + notarize | 🔲 Next |
 
 ## Project structure
 
