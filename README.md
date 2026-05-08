@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="docs/logo.png" width="120" alt="Shine logo"/>
+</p>
+
 # Shine
 
 macOS menu-bar utility that temporarily disables your keyboard and trackpad so you can wipe your laptop clean. Auto-restores on a timer. Hold Esc for 2 seconds to cancel early.
