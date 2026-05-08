@@ -126,9 +126,10 @@ final class AppCoordinator: ObservableObject {
             Task { @MainActor in self?.enterUnlocking() }
         }
         service.onWatchdogFire = { [weak self] in
-            // Called on background queue. Uninstall tap immediately —
-            // don't wait for main actor in case main thread is hung.
-            self?.inputBlocker?.uninstall()
+            // disableTap() is Mach-port-only — safe from background thread.
+            // Full cleanup (CFRunLoopRemoveSource + ARC release) deferred to
+            // main actor via enterUnlocking(), which calls uninstall().
+            self?.inputBlocker?.disableTap()
             Task { @MainActor in self?.enterUnlocking() }
         }
 

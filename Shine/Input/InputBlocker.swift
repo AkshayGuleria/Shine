@@ -15,7 +15,7 @@ final class InputBlocker {
 
     private var tap: CFMachPort?
     private var runLoopSource: CFRunLoopSource?
-    private var retainedSelf: UnsafeMutableRawPointer?   // balances passRetained in install()
+    private var retainedSelf: UnsafeMutableRawPointer?
     private let abortGuard = AbortGuard()
 
     private static let eventMask: CGEventMask =
@@ -68,19 +68,29 @@ final class InputBlocker {
         CFRunLoopAddSource(CFRunLoopGetMain(), src, .commonModes)
         CGEvent.tapEnable(tap: newTap, enable: true)
 
-        // Fires on graceful process exit — OS also auto-cleans tap on crash.
         atexit_b { CGEvent.tapEnable(tap: newTap, enable: false) }
     }
 
-    // Safe to call from any thread (watchdog fires on background queue).
-    func uninstall() {
+    /// Safe to call from any thread — Mach port write only.
+    /// Use this from the watchdog to stop input immediately even if the main thread is hung.
+    func disableTap() {
         guard let t = tap else { return }
         CGEvent.tapEnable(tap: t, enable: false)
+    }
+
+    /// Must be called on the main thread.
+    /// CFRunLoopRemoveSource and retainedSelf release are not safe off-thread.
+    func uninstall() {
+        assert(Thread.isMainThread, "uninstall() must be called on the main thread")
+        guard let t = tap else { return }
+        CGEvent.tapEnable(tap: t, enable: false)
+        tap = nil
+        // Remove source before releasing retainedSelf — guarantees no callbacks
+        // are in-flight when the retain count drops.
         if let src = runLoopSource {
             CFRunLoopRemoveSource(CFRunLoopGetMain(), src, .commonModes)
             runLoopSource = nil
         }
-        tap = nil
         if let ptr = retainedSelf {
             Unmanaged<InputBlocker>.fromOpaque(ptr).release()
             retainedSelf = nil
