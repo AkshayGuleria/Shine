@@ -3,6 +3,7 @@ import SwiftUI
 struct MenuBarView: View {
     @ObservedObject var coordinator: AppCoordinator
     @AppStorage("defaultDuration") private var defaultDuration: Double = 60
+    @Environment(\.openWindow) private var openWindow
 
     private let durations: [Double] = [15, 30, 60, 90, 120]
 
@@ -31,6 +32,11 @@ struct MenuBarView: View {
         } else {
             // Fallback on earlier versions
             
+        }
+
+        Button("About Shine…") {
+            openWindow(id: "about")
+            NSApp.activate(ignoringOtherApps: true)
         }
 
         Divider()
