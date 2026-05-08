@@ -15,6 +15,7 @@ final class InputBlocker {
 
     private var tap: CFMachPort?
     private var runLoopSource: CFRunLoopSource?
+    private var retainedSelf: UnsafeMutableRawPointer?   // balances passRetained in install()
     private let abortGuard = AbortGuard()
 
     private static let eventMask: CGEventMask =
@@ -60,18 +61,18 @@ final class InputBlocker {
             throw BlockerError.tapCreateFailed
         }
 
+        retainedSelf = userInfo
         tap = newTap
         let src = CFMachPortCreateRunLoopSource(kCFAllocatorDefault, newTap, 0)
         runLoopSource = src
         CFRunLoopAddSource(CFRunLoopGetMain(), src, .commonModes)
         CGEvent.tapEnable(tap: newTap, enable: true)
 
-        // Safety net: OS cleans the tap on process death, but atexit handles graceful exit.
-        atexit_b {
-            CGEvent.tapEnable(tap: newTap, enable: false)
-        }
+        // Fires on graceful process exit — OS also auto-cleans tap on crash.
+        atexit_b { CGEvent.tapEnable(tap: newTap, enable: false) }
     }
 
+    // Safe to call from any thread (watchdog fires on background queue).
     func uninstall() {
         guard let t = tap else { return }
         CGEvent.tapEnable(tap: t, enable: false)
@@ -80,6 +81,9 @@ final class InputBlocker {
             runLoopSource = nil
         }
         tap = nil
-        Unmanaged<InputBlocker>.passUnretained(self).release()
+        if let ptr = retainedSelf {
+            Unmanaged<InputBlocker>.fromOpaque(ptr).release()
+            retainedSelf = nil
+        }
     }
 }
