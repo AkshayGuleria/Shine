@@ -2,9 +2,12 @@ import AppKit
 import ApplicationServices
 
 struct PermissionCoordinator {
-    /// Returns true if trusted. Triggers system prompt if not yet granted.
-    @discardableResult
-    func ensureAccessibility() -> Bool {
+    func isAccessibilityGranted() -> Bool {
+        AXIsProcessTrusted()
+    }
+
+    /// Shows system prompt if not yet granted. Call only when user explicitly requests access.
+    func requestAccessibility() -> Bool {
         let opts = [kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String: true] as CFDictionary
         return AXIsProcessTrustedWithOptions(opts)
     }

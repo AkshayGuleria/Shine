@@ -12,6 +12,8 @@ final class AppCoordinator: ObservableObject {
     private var armingTimer: Timer?
     private var armingCount = 3
     private var sleepObserver: NSObjectProtocol?
+    private var permissionPoller: DispatchSourceTimer?
+    private var pendingDuration: TimeInterval?
 
     private static let maxDuration: TimeInterval = 120
     private static let armSeconds = 3
@@ -37,18 +39,46 @@ final class AppCoordinator: ObservableObject {
     func start(duration: TimeInterval) {
         guard case .idle = state else { return }
 
-        guard permission.ensureAccessibility() else {
-            permission.openAccessibilitySettings()
+        if permission.isAccessibilityGranted() {
+            let clamped = min(duration, Self.maxDuration)
+            enterArming(lockDuration: clamped)
             return
         }
 
-        let clamped = min(duration, Self.maxDuration)
-        enterArming(lockDuration: clamped)
+        // Not granted — show system prompt once, then poll until granted.
+        _ = permission.requestAccessibility()
+        pendingDuration = duration
+        startPermissionPolling()
     }
 
     func abort() {
         guard case .locked = state else { return }
         enterUnlocking()
+    }
+
+    // MARK: - Permission polling
+
+    private func startPermissionPolling() {
+        stopPermissionPolling()
+        let timer = DispatchSource.makeTimerSource(queue: .main)
+        timer.schedule(deadline: .now() + 1, repeating: 1)
+        timer.setEventHandler { [weak self] in
+            guard let self else { return }
+            if self.permission.isAccessibilityGranted() {
+                self.stopPermissionPolling()
+                if let d = self.pendingDuration {
+                    self.pendingDuration = nil
+                    self.start(duration: d)
+                }
+            }
+        }
+        timer.resume()
+        permissionPoller = timer
+    }
+
+    private func stopPermissionPolling() {
+        permissionPoller?.cancel()
+        permissionPoller = nil
     }
 
     // MARK: - State transitions
