@@ -123,7 +123,10 @@ final class AppCoordinator: ObservableObject {
             }
         }
         service.onExpiry = { [weak self] in
-            Task { @MainActor in self?.enterUnlocking() }
+            Task { @MainActor in
+                self?.playCompletionSound()
+                self?.enterUnlocking()
+            }
         }
         service.onWatchdogFire = { [weak self] in
             // disableTap() is Mach-port-only — safe from background thread.
@@ -170,5 +173,10 @@ final class AppCoordinator: ObservableObject {
     private func handleSleep() {
         guard case .locked = state else { return }
         enterUnlocking()
+    }
+
+    private func playCompletionSound() {
+        guard UserDefaults.standard.bool(forKey: "soundOnCompletion") else { return }
+        NSSound(named: "Glass")?.play()
     }
 }

@@ -12,5 +12,11 @@ struct ShineApp: App {
         Settings {
             SettingsView(coordinator: coordinator)
         }
+
+        Window("About Shine", id: "about") {
+            AboutView()
+        }
+        .windowResizability(.contentSize)
+        .defaultPosition(.center)
     }
 }
