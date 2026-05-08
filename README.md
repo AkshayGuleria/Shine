@@ -19,7 +19,7 @@ No Dock icon. Lives in the menu bar.
 ## Build
 
 ```bash
-git clone https://github.com/akshayguleria/Shine.git
+git clone https://github.com/AkshayGuleria/Shine.git
 cd Shine
 xcodegen generate
 open Shine.xcodeproj
@@ -31,7 +31,7 @@ Build and run in Xcode (`⌘R`). The app appears in your menu bar.
 
 On first use, macOS will ask for **Accessibility** permission. This is required for `CGEventTap` to intercept keyboard and trackpad events system-wide — the same permission that apps like Karabiner-Elements and Rectangle use.
 
-Grant it in **System Settings → Privacy & Security → Accessibility**, then click "Start cleaning" again.
+Grant it in **System Settings → Privacy & Security → Accessibility**. Shine detects the grant automatically — no need to relaunch or click again.
 
 ## Usage
 
@@ -56,11 +56,11 @@ Shine installs a `CGEventTap` at `kCGHIDEventTap` level, which intercepts hardwa
 |-------|-------------|--------|
 | 1 | CGEventTap proof of concept (`docs/poc/lock_poc.swift`) | ✅ Done |
 | 2 | Xcode project scaffold + state machine | ✅ Done |
-| 3 | Wire tap into app, watchdog, sleep observer | 🔲 Next |
-| 4 | Overlay window + countdown UI | 🔲 Pending |
-| 5 | Abort gesture (Esc-hold) | 🔲 Pending |
-| 6 | Permission UX (first-run flow) | 🔲 Pending |
-| 7 | Polish (sound, launch at login, icon) | 🔲 Pending |
+| 3 | Wire tap into app, watchdog, sleep observer | ✅ Done |
+| 4 | Overlay window + countdown UI | ✅ Done |
+| 5 | Abort gesture (Esc-hold) | ✅ Done |
+| 6 | Permission UX (first-run flow, auto-detect grant) | ✅ Done |
+| 7 | Polish (sound, launch at login, icon) | 🔲 Next |
 | 8 | Sign + notarize | 🔲 Pending |
 
 ## Project structure
