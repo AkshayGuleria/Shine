@@ -131,19 +131,24 @@ final class AppCoordinator: ObservableObject {
         alert.addButton(withTitle: "Restart Shine")
         alert.addButton(withTitle: "Later")
         guard alert.runModal() == .alertFirstButtonReturn else { return }
-        let url = Bundle.main.bundleURL
-        let config = NSWorkspace.OpenConfiguration()
-        NSWorkspace.shared.openApplication(at: url, configuration: config) { _, error in
-            DispatchQueue.main.async {
-                if let error {
-                    let fail = NSAlert()
-                    fail.messageText = "Relaunch Failed"
-                    fail.informativeText = "Could not relaunch Shine: \(error.localizedDescription)\n\nOpen Shine manually from Applications."
-                    fail.runModal()
-                } else {
-                    NSApp.terminate(nil)
-                }
-            }
+        relaunch()
+    }
+
+    private func relaunch() {
+        // NSWorkspace.openApplication on our own bundle just activates the running instance.
+        // Instead, spawn a shell that waits for this process to exit, then opens a fresh one.
+        let path = Bundle.main.bundleURL.path
+        let task = Process()
+        task.launchPath = "/bin/sh"
+        task.arguments = ["-c", "sleep 1; open \"\(path)\""]
+        do {
+            try task.run()
+            NSApp.terminate(nil)
+        } catch {
+            let fail = NSAlert()
+            fail.messageText = "Relaunch Failed"
+            fail.informativeText = "Could not relaunch Shine: \(error.localizedDescription)\n\nOpen Shine manually from Applications."
+            fail.runModal()
         }
     }
 
