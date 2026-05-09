@@ -38,6 +38,7 @@ final class AppCoordinator: ObservableObject {
 
     func start(duration: TimeInterval) {
         guard case .idle = state else { return }
+        guard permissionPoller == nil else { return }  // already waiting for grant
 
         if permission.isAccessibilityGranted() {
             let clamped = min(duration, Self.maxDuration)
@@ -68,7 +69,9 @@ final class AppCoordinator: ObservableObject {
                 self.stopPermissionPolling()
                 if let d = self.pendingDuration {
                     self.pendingDuration = nil
-                    self.start(duration: d)
+                    // Skip start() to avoid re-checking permission (timing gap → loop).
+                    // Permission is confirmed granted; go straight to arming.
+                    self.enterArming(lockDuration: min(d, Self.maxDuration))
                 }
             }
         }
