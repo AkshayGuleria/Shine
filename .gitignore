@@ -22,3 +22,7 @@ DerivedData/
 # Xcodegen
 # (keep project.yml, regenerate xcodeproj from it)
 *.xcodeproj
+
+# Local build output (xcodebuild SYMROOT) and swiftc object files
+build/
+*.o
