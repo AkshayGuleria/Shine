@@ -56,8 +56,10 @@ final class TimerService {
         let remaining = max(0, duration - elapsed)
         onTick?(remaining)
         if remaining <= 0 {
+            // Capture before cancel() nils the callbacks.
+            let expiry = onExpiry
             cancel()
-            onExpiry?()
+            expiry?()
         }
     }
 }
