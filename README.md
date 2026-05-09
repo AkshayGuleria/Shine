@@ -57,7 +57,7 @@ Build and run in Xcode (`⌘R`). The app appears in your menu bar.
 1. Click the diamond icon in the menu bar
 2. Choose a duration (15 / 30 / 60 / 90 / 120s) — default is 60s
 3. Click **Start cleaning** — a 3-second countdown appears, then input locks
-4. Wipe your screen
+4. Wipe your keyboard, trackpad and screen
 5. Input restores automatically when the timer expires
 
 **Cancel early:** hold <kbd>Esc</kbd> for 2 seconds.  
