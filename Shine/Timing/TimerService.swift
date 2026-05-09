@@ -29,7 +29,12 @@ final class TimerService {
 
         let wd = DispatchSource.makeTimerSource(queue: .global(qos: .userInteractive))
         wd.schedule(deadline: .now() + duration + 5)
-        wd.setEventHandler { [weak self] in self?.onWatchdogFire?() }
+        wd.setEventHandler { [weak self] in
+            // Watchdog firing means onExpiry did not run within duration+5s —
+            // likely a main-thread stall.
+            print("[TimerService] watchdog fired — main thread may have been unresponsive")
+            self?.onWatchdogFire?()
+        }
         wd.resume()
         watchdog = wd
     }
@@ -39,6 +44,11 @@ final class TimerService {
         ticker = nil
         watchdog?.cancel()
         watchdog = nil
+        // Nil callbacks so any in-flight background dispatch (watchdog queue)
+        // cannot invoke stale closures after cancel() returns.
+        onTick = nil
+        onExpiry = nil
+        onWatchdogFire = nil
     }
 
     private func tick() {
