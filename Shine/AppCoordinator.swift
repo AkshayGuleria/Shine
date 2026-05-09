@@ -14,6 +14,7 @@ final class AppCoordinator: ObservableObject {
     private var sleepObserver: NSObjectProtocol?
     private var permissionPoller: DispatchSourceTimer?
     private var pendingDuration: TimeInterval?
+    private var permissionPollStart: Date?
 
     private static let maxDuration: TimeInterval = 120
     private static let armSeconds = 3
@@ -38,17 +39,23 @@ final class AppCoordinator: ObservableObject {
 
     func start(duration: TimeInterval) {
         guard case .idle = state else { return }
-        guard permissionPoller == nil else { return }  // already waiting for grant
 
         if permission.isAccessibilityGranted() {
-            let clamped = min(duration, Self.maxDuration)
-            enterArming(lockDuration: clamped)
+            enterArming(lockDuration: min(duration, Self.maxDuration))
             return
         }
 
-        // Not granted — show system prompt once, then poll until granted.
-        _ = permission.requestAccessibility()
+        // requestAccessibility() shows the system prompt AND returns current trust state.
+        // If the user had already granted before (e.g. prior session), it returns true here.
+        if permission.requestAccessibility() {
+            enterArming(lockDuration: min(duration, Self.maxDuration))
+            return
+        }
+
+        // Not yet granted — poll; AXIsProcessTrusted() may require a relaunch to reflect
+        // a freshly granted permission, so we cap polling and offer a relaunch if needed.
         pendingDuration = duration
+        state = .awaitingPermission
         startPermissionPolling()
     }
 
@@ -57,21 +64,53 @@ final class AppCoordinator: ObservableObject {
         enterUnlocking()
     }
 
+    func cancelPermissionWait() {
+        guard case .awaitingPermission = state else { return }
+        stopPermissionPolling()
+        pendingDuration = nil
+        state = .idle
+    }
+
     // MARK: - Permission polling
+
+    private static let permissionPollTimeout: TimeInterval = 30
 
     private func startPermissionPolling() {
         stopPermissionPolling()
+        permissionPollStart = Date()
         let timer = DispatchSource.makeTimerSource(queue: .main)
         timer.schedule(deadline: .now() + 1, repeating: 1)
         timer.setEventHandler { [weak self] in
             guard let self else { return }
+            // Cancel the poller is async — guard against a stale final firing.
+            guard case .awaitingPermission = self.state else { return }
+
             if self.permission.isAccessibilityGranted() {
                 self.stopPermissionPolling()
                 if let d = self.pendingDuration {
                     self.pendingDuration = nil
-                    // Skip start() to avoid re-checking permission (timing gap → loop).
-                    // Permission is confirmed granted; go straight to arming.
+                    // enterArming immediately sets .arming — no intermediate .idle needed.
                     self.enterArming(lockDuration: min(d, Self.maxDuration))
+                } else {
+                    // pendingDuration was nil — shouldn't happen, but avoid stuck state.
+                    self.state = .idle
+                }
+                return
+            }
+
+            // AXIsProcessTrusted() sometimes won't reflect a freshly granted permission
+            // until the process relaunches. After the timeout, offer a relaunch.
+            if let start = self.permissionPollStart,
+               Date().timeIntervalSince(start) >= Self.permissionPollTimeout {
+                self.stopPermissionPolling()
+                let d = self.pendingDuration
+                self.pendingDuration = nil
+                self.state = .idle
+                // Dispatch async so this event handler returns before runModal() is called.
+                // Running NSAlert.runModal() inside a DispatchSource handler starts a nested
+                // run loop on top of the handler's stack, which AppKit does not support safely.
+                DispatchQueue.main.async { [weak self] in
+                    self?.offerRelaunch(pendingDuration: d)
                 }
             }
         }
@@ -82,6 +121,30 @@ final class AppCoordinator: ObservableObject {
     private func stopPermissionPolling() {
         permissionPoller?.cancel()
         permissionPoller = nil
+        permissionPollStart = nil
+    }
+
+    private func offerRelaunch(pendingDuration: TimeInterval?) {
+        let alert = NSAlert()
+        alert.messageText = "Restart Required"
+        alert.informativeText = "Shine needs to restart to activate the Accessibility permission you just granted. Restart now?"
+        alert.addButton(withTitle: "Restart Shine")
+        alert.addButton(withTitle: "Later")
+        guard alert.runModal() == .alertFirstButtonReturn else { return }
+        let url = Bundle.main.bundleURL
+        let config = NSWorkspace.OpenConfiguration()
+        NSWorkspace.shared.openApplication(at: url, configuration: config) { _, error in
+            DispatchQueue.main.async {
+                if let error {
+                    let fail = NSAlert()
+                    fail.messageText = "Relaunch Failed"
+                    fail.informativeText = "Could not relaunch Shine: \(error.localizedDescription)\n\nOpen Shine manually from Applications."
+                    fail.runModal()
+                } else {
+                    NSApp.terminate(nil)
+                }
+            }
+        }
     }
 
     // MARK: - State transitions
@@ -100,6 +163,9 @@ final class AppCoordinator: ObservableObject {
     }
 
     private func tickArming(lockDuration: TimeInterval, timer: Timer) {
+        // Guard: abort() may have already transitioned away from .arming.
+        // Without this, a pending Task { @MainActor } tick can resurrect arming state.
+        guard case .arming = state else { timer.invalidate(); return }
         armingCount -= 1
         if armingCount > 0 {
             state = .arming(remaining: armingCount)
@@ -145,7 +211,23 @@ final class AppCoordinator: ObservableObject {
 
         do {
             try blocker.install()
+        } catch BlockerError.notAuthorized {
+            // TCC propagation lag — AXIsProcessTrusted() raced between our check and
+            // the kernel's trust state. Surface it rather than silently going idle.
+            print("[AppCoordinator] install() notAuthorized — TCC propagation lag")
+            inputBlocker = nil
+            enterUnlocking()
+            return
+        } catch BlockerError.tapCreateFailed {
+            // CGEvent.tapCreate returned nil. Causes: Secure Input active (e.g. password
+            // manager), system tap limit hit, or kernel trust not yet propagated.
+            print("[AppCoordinator] install() tapCreateFailed — CGEvent.tapCreate returned nil")
+            inputBlocker = nil
+            enterUnlocking()
+            return
         } catch {
+            print("[AppCoordinator] install() unexpected error: \(error)")
+            inputBlocker = nil
             enterUnlocking()
             return
         }
@@ -156,8 +238,11 @@ final class AppCoordinator: ObservableObject {
     }
 
     private func enterUnlocking() {
-        guard state != .unlocking && state != .idle else { return }
+        guard state != .unlocking && state != .idle && state != .awaitingPermission else { return }
         state = .unlocking
+
+        armingTimer?.invalidate()
+        armingTimer = nil
 
         timerService?.cancel()
         timerService = nil

@@ -27,9 +27,16 @@ final class TimerService {
         t.resume()
         ticker = t
 
+        // Capture the callback at start() time so cancel() can nil onWatchdogFire on main
+        // without a cross-queue data race — the closure holds its own strong reference.
+        let capturedWatchdogFire = onWatchdogFire
         let wd = DispatchSource.makeTimerSource(queue: .global(qos: .userInteractive))
         wd.schedule(deadline: .now() + duration + 5)
-        wd.setEventHandler { [weak self] in self?.onWatchdogFire?() }
+        wd.setEventHandler {
+            // Fires on background queue — safe even when main thread is hung.
+            print("[TimerService] watchdog fired — main thread may have been unresponsive")
+            capturedWatchdogFire?()
+        }
         wd.resume()
         watchdog = wd
     }
@@ -39,6 +46,11 @@ final class TimerService {
         ticker = nil
         watchdog?.cancel()
         watchdog = nil
+        // Nil callbacks so any in-flight background dispatch (watchdog queue)
+        // cannot invoke stale closures after cancel() returns.
+        onTick = nil
+        onExpiry = nil
+        onWatchdogFire = nil
     }
 
     private func tick() {
@@ -46,8 +58,10 @@ final class TimerService {
         let remaining = max(0, duration - elapsed)
         onTick?(remaining)
         if remaining <= 0 {
+            // Capture before cancel() nils the callbacks.
+            let expiry = onExpiry
             cancel()
-            onExpiry?()
+            expiry?()
         }
     }
 }

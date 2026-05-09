@@ -8,12 +8,22 @@ struct MenuBarView: View {
     private let durations: [Double] = [15, 30, 60, 90, 120]
 
     var body: some View {
-        let isActive = coordinator.state != .idle
+        let isIdle = coordinator.state == .idle
+        let isAwaitingPermission = coordinator.state == .awaitingPermission
+
+        if isAwaitingPermission {
+            Text("Waiting for Accessibility permission…")
+                .foregroundStyle(.secondary)
+            Button("Cancel") {
+                coordinator.cancelPermissionWait()
+            }
+            Divider()
+        }
 
         Button(action: { coordinator.start(duration: defaultDuration) }) {
             Label("Start cleaning (\(Int(defaultDuration))s)", systemImage: "sparkles")
         }
-        .disabled(isActive)
+        .disabled(!isIdle)
 
         Picker("Duration", selection: $defaultDuration) {
             ForEach(durations, id: \.self) { d in
@@ -21,7 +31,7 @@ struct MenuBarView: View {
             }
         }
         .pickerStyle(.inline)
-        .disabled(isActive)
+        .disabled(!isIdle)
 
         Divider()
 
@@ -30,8 +40,10 @@ struct MenuBarView: View {
                 Text("Settings…")
             }
         } else {
-            // Fallback on earlier versions
-            
+            Button("Settings…") {
+                let handled = NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil)
+                if handled { NSApp.activate(ignoringOtherApps: true) }
+            }
         }
 
         Button("About Shine…") {
