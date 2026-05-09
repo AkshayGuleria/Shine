@@ -16,20 +16,20 @@ No Dock icon. Lives in the menu bar.
 2. Unzip, then drag `Shine.app` to `/Applications`
 3. **First launch only:** right-click `Shine.app` → **Open** → click **Open** in the dialog
    - Bypasses Gatekeeper's unsigned-app warning. Required once, never again.
-4. The ✦ icon appears in your menu bar
+4. The diamond icon appears in your menu bar
 
 ### Grant Accessibility Permission
 
 On first use, macOS will prompt for Accessibility access:
 
-1. Click ✦ → **Start cleaning**
+1. Click the diamond icon → **Start cleaning**
 2. macOS shows an Accessibility prompt — click **Open System Settings**
 3. In **Privacy & Security → Accessibility**, toggle **Shine** on
 4. Return to the menu bar — Shine detects the grant automatically and starts the session
 
 ### Uninstall
 
-1. Click ✦ → **Quit Shine**
+1. Click the diamond icon → **Quit Shine**
 2. Delete `Shine.app` from `/Applications`
 3. Optional: remove the Accessibility entry in **System Settings → Privacy & Security → Accessibility**
 
@@ -54,7 +54,7 @@ Build and run in Xcode (`⌘R`). The app appears in your menu bar.
 
 ## Usage
 
-1. Click the ✦ icon in the menu bar
+1. Click the diamond icon in the menu bar
 2. Choose a duration (15 / 30 / 60 / 90 / 120s) — default is 60s
 3. Click **Start cleaning** — a 3-second countdown appears, then input locks
 4. Wipe your screen
