@@ -14,30 +14,31 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install xcodegen
-        run: brew install xcodegen
-
-      - name: Generate Xcode project
-        run: xcodegen generate
-
-      - name: Build (unsigned)
+      - name: Build
         run: |
           xcodebuild \
             -project Shine.xcodeproj \
             -scheme Shine \
             -configuration Release \
             -destination "platform=macOS" \
-            CODE_SIGN_IDENTITY="" \
-            CODE_SIGNING_REQUIRED=NO \
-            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGN_IDENTITY="-" \
+            CODE_SIGNING_REQUIRED=YES \
+            CODE_SIGNING_ALLOWED=YES \
             SYMROOT=build
         env:
           DEVELOPER_DIR: /Applications/Xcode.app/Contents/Developer
 
+      - name: Sign app (ad-hoc)
+        run: |
+          APP=$(find build -name "Shine.app" -maxdepth 4 | head -1)
+          echo "Signing: $APP"
+          codesign --force --deep --sign - "$APP"
+          codesign --verify --deep --strict "$APP" && echo "Signature OK"
+
       - name: Zip app
         run: |
           APP=$(find build -name "Shine.app" -maxdepth 4 | head -1)
-          echo "Found app: $APP"
+          echo "Zipping: $APP"
           ditto -c -k --keepParent "$APP" Shine-${{ github.ref_name }}.zip
 
       - name: Create GitHub Release
@@ -50,8 +51,11 @@ jobs:
             ### Install
             1. Download `Shine-${{ github.ref_name }}.zip`
             2. Unzip and move `Shine.app` to `/Applications`
-            3. Right-click → **Open** (required once to bypass Gatekeeper on unsigned build)
+            3. **First launch** — right-click → **Open**, then click Open in the dialog
+               - If you see "app is damaged": run `xattr -dr com.apple.quarantine /Applications/Shine.app` in Terminal, then open normally
             4. Grant **Accessibility** permission when prompted
+
+            > This build is ad-hoc signed (no Apple notarization). The quarantine step is a one-time bypass for apps not distributed via the App Store.
 
             ### Requirements
             macOS 13.0 Ventura or later
