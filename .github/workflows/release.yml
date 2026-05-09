@@ -1,0 +1,58 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+jobs:
+  build-and-release:
+    runs-on: macos-15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install xcodegen
+        run: brew install xcodegen
+
+      - name: Generate Xcode project
+        run: xcodegen generate
+
+      - name: Build (unsigned)
+        run: |
+          xcodebuild \
+            -project Shine.xcodeproj \
+            -scheme Shine \
+            -configuration Release \
+            -destination "platform=macOS" \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO \
+            SYMROOT=build
+        env:
+          DEVELOPER_DIR: /Applications/Xcode.app/Contents/Developer
+
+      - name: Zip app
+        run: |
+          APP=$(find build -name "Shine.app" -maxdepth 4 | head -1)
+          echo "Found app: $APP"
+          ditto -c -k --keepParent "$APP" Shine-${{ github.ref_name }}.zip
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: Shine ${{ github.ref_name }}
+          body: |
+            ## Shine ${{ github.ref_name }}
+
+            ### Install
+            1. Download `Shine-${{ github.ref_name }}.zip`
+            2. Unzip and move `Shine.app` to `/Applications`
+            3. Right-click → **Open** (required once to bypass Gatekeeper on unsigned build)
+            4. Grant **Accessibility** permission when prompted
+
+            ### Requirements
+            macOS 13.0 Ventura or later
+          files: Shine-${{ github.ref_name }}.zip
+          draft: false
+          prerelease: false
