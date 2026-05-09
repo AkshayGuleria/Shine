@@ -18,23 +18,29 @@ final class InputBlocker {
     private var retainedSelf: UnsafeMutableRawPointer?
     private let abortGuard = AbortGuard()
 
-    private static let eventMask: CGEventMask =
-        (1 << CGEventType.keyDown.rawValue)           |
-        (1 << CGEventType.keyUp.rawValue)             |
-        (1 << CGEventType.flagsChanged.rawValue)      |
-        (1 << CGEventType.mouseMoved.rawValue)        |
-        (1 << CGEventType.leftMouseDown.rawValue)     |
-        (1 << CGEventType.leftMouseUp.rawValue)       |
-        (1 << CGEventType.rightMouseDown.rawValue)    |
-        (1 << CGEventType.rightMouseUp.rawValue)      |
-        (1 << CGEventType.otherMouseDown.rawValue)    |
-        (1 << CGEventType.otherMouseUp.rawValue)      |
-        (1 << CGEventType.leftMouseDragged.rawValue)  |
-        (1 << CGEventType.rightMouseDragged.rawValue) |
-        (1 << CGEventType.otherMouseDragged.rawValue) |
-        (1 << CGEventType.scrollWheel.rawValue)       |
-        (1 << CGEventType.tabletPointer.rawValue)     |
-        (1 << CGEventType.tabletProximity.rawValue)
+    private static let eventMask: CGEventMask = {
+        let keyboard: CGEventMask =
+            CGEventMask(1 << CGEventType.keyDown.rawValue) |
+            CGEventMask(1 << CGEventType.keyUp.rawValue) |
+            CGEventMask(1 << CGEventType.flagsChanged.rawValue)
+        let mouse: CGEventMask =
+            CGEventMask(1 << CGEventType.mouseMoved.rawValue) |
+            CGEventMask(1 << CGEventType.leftMouseDown.rawValue) |
+            CGEventMask(1 << CGEventType.leftMouseUp.rawValue) |
+            CGEventMask(1 << CGEventType.rightMouseDown.rawValue) |
+            CGEventMask(1 << CGEventType.rightMouseUp.rawValue) |
+            CGEventMask(1 << CGEventType.otherMouseDown.rawValue) |
+            CGEventMask(1 << CGEventType.otherMouseUp.rawValue)
+        let drag: CGEventMask =
+            CGEventMask(1 << CGEventType.leftMouseDragged.rawValue) |
+            CGEventMask(1 << CGEventType.rightMouseDragged.rawValue) |
+            CGEventMask(1 << CGEventType.otherMouseDragged.rawValue)
+        let other: CGEventMask =
+            CGEventMask(1 << CGEventType.scrollWheel.rawValue) |
+            CGEventMask(1 << CGEventType.tabletPointer.rawValue) |
+            CGEventMask(1 << CGEventType.tabletProximity.rawValue)
+        return keyboard | mouse | drag | other
+    }()
 
     func install() throws {
         guard AXIsProcessTrusted() else { throw BlockerError.notAuthorized }
