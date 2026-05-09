@@ -5,7 +5,7 @@ struct ShineApp: App {
     @StateObject private var coordinator = AppCoordinator()
 
     var body: some Scene {
-        MenuBarExtra("Shine", systemImage: "sparkles") {
+        MenuBarExtra("Shine", image: "MenuBarIcon") {
             MenuBarView(coordinator: coordinator)
         }
 
