@@ -71,6 +71,14 @@ final class AppCoordinator: ObservableObject {
         state = .idle
     }
 
+    func checkPermissionNow() {
+        guard case .awaitingPermission = state else { return }
+        stopPermissionPolling()
+        pendingDuration = nil
+        state = .idle
+        relaunch()
+    }
+
     // MARK: - Permission polling
 
     private static let permissionPollTimeout: TimeInterval = 30
