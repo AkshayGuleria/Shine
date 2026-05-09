@@ -10,13 +10,38 @@ No Dock icon. Lives in the menu bar.
 
 ---
 
-## Requirements
+## Install
+
+1. Go to [Releases](https://github.com/AkshayGuleria/Shine/releases) and download `Shine-vX.X.X.zip`
+2. Unzip, then drag `Shine.app` to `/Applications`
+3. **First launch only:** right-click `Shine.app` → **Open** → click **Open** in the dialog
+   - Bypasses Gatekeeper's unsigned-app warning. Required once, never again.
+4. The ✦ icon appears in your menu bar
+
+### Grant Accessibility Permission
+
+On first use, macOS will prompt for Accessibility access:
+
+1. Click ✦ → **Start cleaning**
+2. macOS shows an Accessibility prompt — click **Open System Settings**
+3. In **Privacy & Security → Accessibility**, toggle **Shine** on
+4. Return to the menu bar — Shine detects the grant automatically and starts the session
+
+### Uninstall
+
+1. Click ✦ → **Quit Shine**
+2. Delete `Shine.app` from `/Applications`
+3. Optional: remove the Accessibility entry in **System Settings → Privacy & Security → Accessibility**
+
+---
+
+## Build from source
+
+### Requirements
 
 - macOS 13.0 Ventura or later
 - Xcode 15+
 - [xcodegen](https://github.com/yonaskolb/XcodeGen) (`brew install xcodegen`)
-
-## Build
 
 ```bash
 git clone https://github.com/AkshayGuleria/Shine.git
@@ -26,12 +51,6 @@ open Shine.xcodeproj
 ```
 
 Build and run in Xcode (`⌘R`). The app appears in your menu bar.
-
-## First run
-
-On first use, macOS will ask for **Accessibility** permission. This is required for `CGEventTap` to intercept keyboard and trackpad events system-wide — the same permission that apps like Karabiner-Elements and Rectangle use.
-
-Grant it in **System Settings → Privacy & Security → Accessibility**. Shine detects the grant automatically — no need to relaunch or click again.
 
 ## Usage
 
