@@ -32,16 +32,24 @@ final class OverlayWindowController {
     }
 
     func dismiss(completion: @escaping () -> Void) {
-        let captures = windows
-        NSAnimationContext.runAnimationGroup { ctx in
-            ctx.duration = 0.3
-            captures.forEach { $0.animator().alphaValue = 0 }
-        } completionHandler: {
-            captures.forEach { $0.close() }
-            completion()
-        }
+        let captureWindows = windows
+        let captureViews = hostingViews
         windows.removeAll()
         hostingViews.removeAll()
+        NSAnimationContext.runAnimationGroup { ctx in
+            ctx.duration = 0.3
+            captureWindows.forEach { $0.animator().alphaValue = 0 }
+        } completionHandler: {
+            // Defer close by one run loop pass: SwiftUI autoreleases ObjC objects
+            // during NSHostingView teardown; closing synchronously here leaves stale
+            // autorelease pool entries that crash on drain. The async hop lets the
+            // pool drain first.
+            DispatchQueue.main.async {
+                captureWindows.forEach { $0.close() }
+                _ = captureViews  // keep hosting views alive past close()
+                completion()
+            }
+        }
     }
 
     private func makeWindow(for screen: NSScreen) -> NSWindow {
