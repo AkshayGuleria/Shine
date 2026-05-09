@@ -14,6 +14,9 @@ struct MenuBarView: View {
         if isAwaitingPermission {
             Text("Waiting for Accessibility permission…")
                 .foregroundStyle(.secondary)
+            Button("I've Approved It — Restart Shine") {
+                coordinator.checkPermissionNow()
+            }
             Button("Cancel") {
                 coordinator.cancelPermissionWait()
             }

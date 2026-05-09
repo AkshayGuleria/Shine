@@ -16,10 +16,11 @@ struct AboutView: View {
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
 
-            Text("Temporarily disables keyboard and trackpad\nso you can wipe your Mac clean.")
+            Text("Temporarily disables keyboard and trackpad so you can wipe your Mac clean.")
                 .font(.callout)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
 
             Divider()
 

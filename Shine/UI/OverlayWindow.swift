@@ -45,9 +45,13 @@ final class OverlayWindowController {
             // autorelease pool entries that crash on drain. The async hop lets the
             // pool drain first.
             DispatchQueue.main.async {
-                captureWindows.forEach { $0.close() }
-                _ = captureViews  // keep hosting views alive past close()
+                // orderOut hides without posting willCloseNotification.
+                // SwiftUI observes that notification globally and calls NSApp.terminate
+                // when it thinks all windows closed — close() would quit the app.
+                captureWindows.forEach { $0.orderOut(nil) }
+                _ = captureViews  // keep hosting views alive until windows are hidden
                 completion()
+                // captureWindows and captureViews go out of scope here; ARC releases them.
             }
         }
     }

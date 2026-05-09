@@ -27,7 +27,7 @@ struct OverlayView: View {
                         .font(.system(size: 96, weight: .bold, design: .rounded).monospacedDigit())
                         .foregroundStyle(.white)
                         .contentTransition(.numericText())
-                    Text("Hold Esc for 2s to cancel")
+                    Text("Hold Esc key for 2 seconds to cancel")
                         .font(.system(size: 18, weight: .regular, design: .rounded))
                         .foregroundStyle(.white.opacity(0.5))
 
