@@ -27,13 +27,15 @@ final class TimerService {
         t.resume()
         ticker = t
 
+        // Capture the callback at start() time so cancel() can nil onWatchdogFire on main
+        // without a cross-queue data race — the closure holds its own strong reference.
+        let capturedWatchdogFire = onWatchdogFire
         let wd = DispatchSource.makeTimerSource(queue: .global(qos: .userInteractive))
         wd.schedule(deadline: .now() + duration + 5)
-        wd.setEventHandler { [weak self] in
-            // Watchdog firing means onExpiry did not run within duration+5s —
-            // likely a main-thread stall.
+        wd.setEventHandler {
+            // Fires on background queue — safe even when main thread is hung.
             print("[TimerService] watchdog fired — main thread may have been unresponsive")
-            self?.onWatchdogFire?()
+            capturedWatchdogFire?()
         }
         wd.resume()
         watchdog = wd

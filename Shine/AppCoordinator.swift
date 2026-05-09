@@ -64,6 +64,13 @@ final class AppCoordinator: ObservableObject {
         enterUnlocking()
     }
 
+    func cancelPermissionWait() {
+        guard case .awaitingPermission = state else { return }
+        stopPermissionPolling()
+        pendingDuration = nil
+        state = .idle
+    }
+
     // MARK: - Permission polling
 
     private static let permissionPollTimeout: TimeInterval = 30
@@ -82,9 +89,11 @@ final class AppCoordinator: ObservableObject {
                 self.stopPermissionPolling()
                 if let d = self.pendingDuration {
                     self.pendingDuration = nil
-                    self.state = .idle
-                    // Call enterArming directly — permission confirmed, skip re-check.
+                    // enterArming immediately sets .arming — no intermediate .idle needed.
                     self.enterArming(lockDuration: min(d, Self.maxDuration))
+                } else {
+                    // pendingDuration was nil — shouldn't happen, but avoid stuck state.
+                    self.state = .idle
                 }
                 return
             }
@@ -97,7 +106,12 @@ final class AppCoordinator: ObservableObject {
                 let d = self.pendingDuration
                 self.pendingDuration = nil
                 self.state = .idle
-                self.offerRelaunch(pendingDuration: d)
+                // Dispatch async so this event handler returns before runModal() is called.
+                // Running NSAlert.runModal() inside a DispatchSource handler starts a nested
+                // run loop on top of the handler's stack, which AppKit does not support safely.
+                DispatchQueue.main.async { [weak self] in
+                    self?.offerRelaunch(pendingDuration: d)
+                }
             }
         }
         timer.resume()
@@ -119,8 +133,18 @@ final class AppCoordinator: ObservableObject {
         guard alert.runModal() == .alertFirstButtonReturn else { return }
         let url = Bundle.main.bundleURL
         let config = NSWorkspace.OpenConfiguration()
-        NSWorkspace.shared.openApplication(at: url, configuration: config) { _, _ in }
-        NSApp.terminate(nil)
+        NSWorkspace.shared.openApplication(at: url, configuration: config) { _, error in
+            DispatchQueue.main.async {
+                if let error {
+                    let fail = NSAlert()
+                    fail.messageText = "Relaunch Failed"
+                    fail.informativeText = "Could not relaunch Shine: \(error.localizedDescription)\n\nOpen Shine manually from Applications."
+                    fail.runModal()
+                } else {
+                    NSApp.terminate(nil)
+                }
+            }
+        }
     }
 
     // MARK: - State transitions
@@ -216,6 +240,9 @@ final class AppCoordinator: ObservableObject {
     private func enterUnlocking() {
         guard state != .unlocking && state != .idle && state != .awaitingPermission else { return }
         state = .unlocking
+
+        armingTimer?.invalidate()
+        armingTimer = nil
 
         timerService?.cancel()
         timerService = nil

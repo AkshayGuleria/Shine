@@ -14,6 +14,10 @@ struct MenuBarView: View {
         if isAwaitingPermission {
             Text("Waiting for Accessibility permission…")
                 .foregroundStyle(.secondary)
+            Button("Cancel") {
+                coordinator.cancelPermissionWait()
+            }
+            Divider()
         }
 
         Button(action: { coordinator.start(duration: defaultDuration) }) {
@@ -37,8 +41,8 @@ struct MenuBarView: View {
             }
         } else {
             Button("Settings…") {
-                NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil)
-                NSApp.activate(ignoringOtherApps: true)
+                let handled = NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil)
+                if handled { NSApp.activate(ignoringOtherApps: true) }
             }
         }
 

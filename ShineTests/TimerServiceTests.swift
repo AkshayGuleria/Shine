@@ -41,19 +41,14 @@ final class TimerServiceTests: XCTestCase {
         XCTAssertEqual(tickCount, countAtCancel, "No ticks after cancel")
     }
 
-    func testWatchdogFiresAfterDurationPlusFive() async throws {
-        // Use very short duration + expect watchdog fires after duration+5s.
-        // Only feasible with a tiny duration in tests.
+    func testCancelAfterStartDoesNotCrash() {
+        // Regression: cancel() immediately after start() must not crash or access-race.
+        // Watchdog fires at duration+5s — too slow for a unit test; the 5s delay is
+        // intentional production behaviour and cannot be shortened without DI.
         let svc = TimerService(duration: 0.1)
-        let exp = expectation(description: "watchdog")
-        svc.onWatchdogFire = { exp.fulfill() }
-        // Don't call onExpiry — simulate a stuck state by not cancelling.
-        // Watchdog fires at 0.1 + 5 = 5.1s — too slow for unit test.
-        // Instead, verify watchdog is non-nil via black-box: just confirm no crash.
+        svc.onWatchdogFire = { XCTFail("watchdog should not fire after cancel") }
         svc.start()
         svc.cancel()
-        // Watchdog fired check skipped (5s delay). This test documents the expected behavior.
-        exp.fulfill()
-        await fulfillment(of: [exp], timeout: 1.0)
+        // No assertion needed — absence of crash / EXC_BAD_ACCESS is the test.
     }
 }
