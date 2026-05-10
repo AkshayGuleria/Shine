@@ -16,6 +16,7 @@ No Dock icon. Lives in the menu bar.
 2. Unzip, then drag `Shine.app` to `/Applications`
 3. **First launch only:** right-click `Shine.app` → **Open** → click **Open** in the dialog
    - Bypasses Gatekeeper's unsigned-app warning. Required once, never again.
+   - If macOS says **"app is damaged"**: run `xattr -dr com.apple.quarantine /Applications/Shine.app` in Terminal, then open normally
 4. The diamond icon appears in your menu bar
 
 ### Grant Accessibility Permission
