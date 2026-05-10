@@ -41,12 +41,9 @@ On first use, macOS will prompt for Accessibility access:
 
 - macOS 13.0 Ventura or later
 - Xcode 15+
-- [xcodegen](https://github.com/yonaskolb/XcodeGen) (`brew install xcodegen`)
 
 ```bash
 git clone https://github.com/AkshayGuleria/Shine.git
-cd Shine
-xcodegen generate
 open Shine.xcodeproj
 ```
 
