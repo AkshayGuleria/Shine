@@ -1,5 +1,8 @@
 import Cocoa
 import Combine
+import os
+
+private let logger = Logger(subsystem: "com.akshayguleria.shine", category: "AppCoordinator")
 
 @MainActor
 final class AppCoordinator: ObservableObject {
@@ -227,19 +230,19 @@ final class AppCoordinator: ObservableObject {
         } catch BlockerError.notAuthorized {
             // TCC propagation lag — AXIsProcessTrusted() raced between our check and
             // the kernel's trust state. Surface it rather than silently going idle.
-            print("[AppCoordinator] install() notAuthorized — TCC propagation lag")
+            logger.error("install() notAuthorized — TCC propagation lag")
             inputBlocker = nil
             enterUnlocking()
             return
         } catch BlockerError.tapCreateFailed {
             // CGEvent.tapCreate returned nil. Causes: Secure Input active (e.g. password
             // manager), system tap limit hit, or kernel trust not yet propagated.
-            print("[AppCoordinator] install() tapCreateFailed — CGEvent.tapCreate returned nil")
+            logger.error("install() tapCreateFailed — CGEvent.tapCreate returned nil")
             inputBlocker = nil
             enterUnlocking()
             return
         } catch {
-            print("[AppCoordinator] install() unexpected error: \(error)")
+            logger.error("install() unexpected error: \(error, privacy: .public)")
             inputBlocker = nil
             enterUnlocking()
             return

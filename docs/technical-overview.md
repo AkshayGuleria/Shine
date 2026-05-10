@@ -268,6 +268,28 @@ Shine/
 
 ---
 
+## Distribution
+
+### Current (ad-hoc / unsigned)
+
+GitHub Actions builds and releases an ad-hoc-signed zip. Users must right-click → **Open** once to bypass Gatekeeper. No Apple Developer account needed for this path.
+
+### Future (Developer ID + notarization)
+
+To ship a fully notarized build that passes Gatekeeper silently:
+
+1. Obtain Apple Developer Program membership ($99/yr)
+2. Install a Developer ID Application certificate in Keychain
+3. Set build settings: `ENABLE_HARDENED_RUNTIME = YES`, code sign with Developer ID
+4. Archive and export via Xcode (Product → Archive → Distribute)
+5. Run `scripts/notarize.sh Shine.app` — zips, submits to Apple, staples the ticket
+6. Verify: `spctl --assess --verbose Shine.app`
+7. Distribute as `.zip` or `.dmg`
+
+See `scripts/notarize.sh` for full prerequisites and usage.
+
+---
+
 ## Requirements
 
 | | |
