@@ -1,4 +1,7 @@
 import Foundation
+import os
+
+private let logger = Logger(subsystem: "com.akshayguleria.shine", category: "TimerService")
 
 final class TimerService {
     var onTick: ((TimeInterval) -> Void)?
@@ -34,7 +37,7 @@ final class TimerService {
         wd.schedule(deadline: .now() + duration + 5)
         wd.setEventHandler {
             // Fires on background queue — safe even when main thread is hung.
-            print("[TimerService] watchdog fired — main thread may have been unresponsive")
+            logger.warning("watchdog fired — main thread may have been unresponsive")
             capturedWatchdogFire?()
         }
         wd.resume()
