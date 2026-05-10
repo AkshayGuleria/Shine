@@ -67,6 +67,8 @@ Build and run in Xcode (`⌘R`). The app appears in your menu bar.
 
 Shine installs a `CGEventTap` at `kCGHIDEventTap` level, which intercepts hardware input events before any other consumer. During the lock period all events are dropped except Esc (used for abort detection). A watchdog timer fires at `duration + 5s` and tears down the tap unconditionally — even if the main thread is hung. The tap is also auto-removed on process death.
 
+For architecture details — state machine, component breakdown, input blocking internals — see [`docs/technical-overview.md`](docs/technical-overview.md).
+
 **Distribution note:** Shine is distributed unsigned via GitHub Releases. Mac App Store distribution is not possible — the sandbox blocks system-wide HID event taps. On first launch, right-click → **Open** to bypass Gatekeeper.
 
 ## Build phases
