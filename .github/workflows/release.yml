@@ -64,8 +64,9 @@ jobs:
 
             ### Install via Homebrew (recommended)
             ```bash
-            brew install --cask --no-quarantine AkshayGuleria/tap/shine
+            brew install --cask AkshayGuleria/tap/shine
             ```
+            If macOS blocks the app on first open: `xattr -dr com.apple.quarantine /Applications/Shine.app`
 
             ### Manual install
             1. Download `Shine-${{ github.ref_name }}.zip`
