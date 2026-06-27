@@ -41,6 +41,20 @@ jobs:
           echo "Zipping: $APP"
           ditto -c -k --keepParent "$APP" Shine-${{ github.ref_name }}.zip
 
+      - name: Compute SHA256
+        id: sha256
+        run: |
+          SHA=$(shasum -a 256 Shine-${{ github.ref_name }}.zip | awk '{print $1}')
+          echo "sha256=$SHA" >> $GITHUB_OUTPUT
+
+      - name: Update Homebrew cask
+        env:
+          HOMEBREW_TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+        run: |
+          VERSION="${{ github.ref_name }}"
+          VERSION="${VERSION#v}"
+          bash scripts/update-cask.sh "$VERSION" "${{ steps.sha256.outputs.sha256 }}"
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v3.0.0
         with:
@@ -48,14 +62,19 @@ jobs:
           body: |
             ## Shine ${{ github.ref_name }}
 
-            ### Install
+            ### Install via Homebrew (recommended)
+            ```bash
+            brew install --cask AkshayGuleria/tap/shine
+            ```
+
+            ### Manual install
             1. Download `Shine-${{ github.ref_name }}.zip`
             2. Unzip and move `Shine.app` to `/Applications`
             3. **First launch** — right-click → **Open**, then click Open in the dialog
                - If you see "app is damaged": run `xattr -dr com.apple.quarantine /Applications/Shine.app` in Terminal, then open normally
             4. Grant **Accessibility** permission when prompted
 
-            > This build is ad-hoc signed (no Apple notarization). The quarantine step is a one-time bypass for apps not distributed via the App Store.
+            > Homebrew install handles the quarantine step automatically.
 
             ### Requirements
             macOS 13.0 Ventura or later

@@ -12,10 +12,19 @@ No Dock icon. Lives in the menu bar.
 
 ## Install
 
+### Homebrew (recommended)
+
+```bash
+brew install --cask AkshayGuleria/tap/shine
+```
+
+Homebrew handles everything — no Gatekeeper prompts, no quarantine workarounds.
+
+### Manual
+
 1. Go to [Releases](https://github.com/AkshayGuleria/Shine/releases) and download `Shine-vX.X.X.zip`
 2. Unzip, then drag `Shine.app` to `/Applications`
 3. **First launch only:** right-click `Shine.app` → **Open** → click **Open** in the dialog
-   - Bypasses Gatekeeper's unsigned-app warning. Required once, never again.
    - If macOS says **"app is damaged"**: run `xattr -dr com.apple.quarantine /Applications/Shine.app` in Terminal, then open normally
 4. The diamond icon appears in your menu bar
 
@@ -30,9 +39,11 @@ On first use, macOS will prompt for Accessibility access:
 
 ### Uninstall
 
-1. Click the diamond icon → **Quit Shine**
-2. Delete `Shine.app` from `/Applications`
-3. Optional: remove the Accessibility entry in **System Settings → Privacy & Security → Accessibility**
+```bash
+brew uninstall --cask shine
+```
+
+Or manually: quit Shine, delete `/Applications/Shine.app`, and remove the Accessibility entry in **System Settings → Privacy & Security → Accessibility**.
 
 ---
 
@@ -67,7 +78,7 @@ Shine installs a `CGEventTap` at `kCGHIDEventTap` level, which intercepts hardwa
 
 For architecture details — state machine, component breakdown, input blocking internals — see [`docs/technical-overview.md`](docs/technical-overview.md).
 
-**Distribution note:** Shine is distributed unsigned via GitHub Releases. Mac App Store distribution is not possible — the sandbox blocks system-wide HID event taps. On first launch, right-click → **Open** to bypass Gatekeeper.
+**Distribution note:** Shine is ad-hoc signed and distributed via a [Homebrew tap](https://github.com/AkshayGuleria/homebrew-tap). Mac App Store distribution is not possible — the sandbox blocks system-wide HID event taps. Install via `brew install --cask AkshayGuleria/tap/shine`; Homebrew strips the quarantine attribute automatically so no Gatekeeper workaround is needed.
 
 ## Build phases
 
