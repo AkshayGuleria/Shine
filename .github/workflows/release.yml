@@ -64,7 +64,7 @@ jobs:
 
             ### Install via Homebrew (recommended)
             ```bash
-            brew install --cask AkshayGuleria/tap/shine
+            brew install --cask --no-quarantine AkshayGuleria/tap/shine
             ```
 
             ### Manual install

@@ -15,10 +15,10 @@ No Dock icon. Lives in the menu bar.
 ### Homebrew (recommended)
 
 ```bash
-brew install --cask AkshayGuleria/tap/shine
+brew install --cask --no-quarantine AkshayGuleria/tap/shine
 ```
 
-Homebrew handles everything — no Gatekeeper prompts, no quarantine workarounds.
+`--no-quarantine` skips the Gatekeeper "unidentified developer" prompt — required because Shine is ad-hoc signed, not notarized.
 
 ### Manual
 
@@ -78,7 +78,7 @@ Shine installs a `CGEventTap` at `kCGHIDEventTap` level, which intercepts hardwa
 
 For architecture details — state machine, component breakdown, input blocking internals — see [`docs/technical-overview.md`](docs/technical-overview.md).
 
-**Distribution note:** Shine is ad-hoc signed and distributed via a [Homebrew tap](https://github.com/AkshayGuleria/homebrew-tap). Mac App Store distribution is not possible — the sandbox blocks system-wide HID event taps. Install via `brew install --cask AkshayGuleria/tap/shine`; Homebrew strips the quarantine attribute automatically so no Gatekeeper workaround is needed.
+**Distribution note:** Shine is ad-hoc signed and distributed via a [Homebrew tap](https://github.com/AkshayGuleria/homebrew-tap). Mac App Store distribution is not possible — the sandbox blocks system-wide HID event taps. Install via `brew install --cask --no-quarantine AkshayGuleria/tap/shine`; the `--no-quarantine` flag skips the Gatekeeper prompt for ad-hoc signed apps.
 
 ## Build phases
 
