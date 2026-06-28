@@ -263,11 +263,16 @@ final class AppCoordinator: ObservableObject {
         timerService?.cancel()
         timerService = nil
 
-        inputBlocker?.uninstall()
+        // Capture before nilling so the dismiss completion can call uninstall().
+        // inputBlocker is nilled now so watchdog's disableTap() becomes a safe no-op
+        // if it races with this transition.
+        let blocker = inputBlocker
         inputBlocker = nil
 
         overlayController?.dismiss {
             Task { @MainActor in
+                // Tap stays active through dismiss animation; uninstall only after overlay hidden.
+                blocker?.uninstall()
                 self.overlayController = nil
                 self.state = .idle
             }
