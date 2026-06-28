@@ -60,4 +60,27 @@ final class LockStateMachineTests: XCTestCase {
         // (We just verify no crash and state transitions begin)
         XCTAssertNotEqual(c.state, .idle)
     }
+
+    func testUnlockingStatePersistsThroughDismissAnimation() async throws {
+        let c = AppCoordinator()
+        guard AXIsProcessTrusted() else { throw XCTSkip("Accessibility not granted") }
+
+        // Drive coordinator into .locked state.
+        c.start(duration: 60)
+        // Wait for arming countdown (3 s) + a tick to transition to .locked.
+        try await Task.sleep(for: .milliseconds(3200))
+        guard case .locked = c.state else { throw XCTSkip("Did not reach .locked — environment issue") }
+
+        // Trigger unlock.
+        c.abort()
+
+        // Immediately after abort(), state must be .unlocking (not .idle yet).
+        if case .unlocking = c.state { /* expected */ } else {
+            XCTFail("Expected .unlocking immediately after abort(), got \(c.state)")
+        }
+
+        // After dismiss animation + async hop (~400 ms headroom), state must be .idle.
+        try await Task.sleep(for: .milliseconds(500))
+        XCTAssertEqual(c.state, .idle, "Expected .idle after dismiss animation, got \(c.state)")
+    }
 }
