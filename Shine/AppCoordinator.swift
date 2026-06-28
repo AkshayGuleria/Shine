@@ -216,7 +216,7 @@ final class AppCoordinator: ObservableObject {
         service.onWatchdogFire = { [weak self] in
             // disableTap() is Mach-port-only — safe from background thread.
             // Full cleanup (CFRunLoopRemoveSource + ARC release) deferred to
-            // main actor via enterUnlocking(), which calls uninstall().
+            // main actor via the dismiss completion callback in enterUnlocking().
             self?.inputBlocker?.disableTap()
             Task { @MainActor in self?.enterUnlocking() }
         }
